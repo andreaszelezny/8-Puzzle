@@ -63,7 +63,7 @@ let makeNumber state =
 
 let aStarGraphSearch initialState heuristicFun =
     let fringe = new Fringe()
-    let allNodes = new Dictionary<int, bool>()
+    let allNodes = new Dictionary<int, int>()
 
     let rec aStar() =
         match fringe.Dequeue() with
@@ -73,16 +73,15 @@ let aStarGraphSearch initialState heuristicFun =
             else
                 successors thisNode.state |> List.iter (fun s -> 
                     let bigNumber = makeNumber s
-                    if not (allNodes.ContainsKey(bigNumber)) then
-                            fringe.Enqueue (thisNode.depth + heuristicFun s) { state = s; depth = thisNode.depth + 1 }
-                            allNodes.Add(bigNumber,true))
-                    // else ... Note: For real problems, the algorithm should check here whether the path of thisNode is shorter than 
-                    // the one already existing in allNodes. If yes, update the fringe with this shorter version.
-                    // For this toy problem, that is not necessary and the search works fine the way it is.
+                    let (visited, oldDepth) = allNodes.TryGetValue(bigNumber)
+                    if not visited || oldDepth > thisNode.depth then
+                        if visited then allNodes.Remove(bigNumber) |> ignore
+                        fringe.Enqueue (thisNode.depth + heuristicFun s) { state = s; depth = thisNode.depth + 1 }
+                        allNodes.Add(bigNumber,thisNode.depth))
                 aStar()
     
     fringe.Enqueue (heuristicFun initialState) { state = initialState; depth = 0 }
-    allNodes.Add(makeNumber initialState, true)
+    allNodes.Add(makeNumber initialState, 0)
     aStar()
 
 // How many different states of the Eight-Puzzle are exactly 27 steps from the solution (= goal state), 
